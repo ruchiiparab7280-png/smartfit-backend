@@ -1,13 +1,23 @@
 console.log("🔥 FINAL SERVER RUNNING");
 
 const express = require("express");
-const mysql = require("mysql2");
+
 const cors = require("cors");
-const bcrypt = require("bcrypt");
+
+const bcrypt = require("bcrypt");const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  "https://fcuewjjxhgwpgwhxxeht.supabase.co",
+  "sb_publishable_EKFKAzBXesy3253E2ggfow_b2ZdIZPT"
+);
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:4028",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(express.json());
 
 const ownerRoutes = require("./routes/ownerRoutes");
@@ -16,23 +26,8 @@ app.use("/api/owner", ownerRoutes);
 const userDashboardRoute = require("./routes/userDashboard");
 app.use("/api/user", userDashboardRoute);
 
-/* ================= DATABASE ================= */
 
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "smartfit",
-  port: 3307
-});
 
-db.connect(err => {
-  if (err) {
-    console.log("❌ DB Connection Failed:", err);
-  } else {
-    console.log("✅ MySQL Connected");
-  }
-});
 
 /* ================= TEST ================= */
 
@@ -48,43 +43,43 @@ app.post("/signup", async (req, res) => {
 
   try {
 
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, result) => {
+    const { data: existing } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email);
 
-      if (err) return res.status(500).json({ message: "Database error" });
+    if (existing && existing.length > 0) {
+      return res.status(400).json({ message: "Email already registered ❌" });
+    }
 
-      if (result.length > 0) {
-        return res.status(400).json({ message: "Email already registered ❌" });
-      }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+    const { error } = await supabase
+      .from("users")
+      .insert([
+        { name, email, password: hashedPassword, role }
+      ]);
 
-      db.query(
-        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-        [name, email, hashedPassword, role],
-        (err) => {
+    if (error) throw error;
 
-          if (err) return res.status(500).json({ message: "Signup failed ❌" });
+    // 🔥 SAME OLD PHP STYLE RESPONSE
+    if (role === "owner") {
+      return res.json({
+        message: "Signup successful",
+        redirect: "/partner-with-us"
+      });
+    } else {
+      return res.json({
+        message: "Signup successful",
+        redirect: "/user-dashboard"
+      });
+    }
 
-          if (role === "owner") {
-            return res.json({
-              message: "Signup successful",
-              redirect: "/partner-with-us"
-            });
-          } else {
-            return res.json({
-              message: "Signup successful",
-              redirect: "/user-dashboard"
-            });
-          }
-
-        }
-      );
-
-    });
-
-  } catch (error) {
-    res.status(500).json({ message: "Server error ❌" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Signup failed ❌" });
   }
+
 });
 
 
@@ -96,55 +91,51 @@ app.post("/login", async (req, res) => {
 
   try {
 
-    const [result] = await db.promise().query(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
+    const { data: users } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email);
 
-    if (result.length === 0) {
+    if (!users || users.length === 0) {
       return res.status(400).json({ message: "User not found ❌" });
     }
 
-    const user = result[0];
+    const user = users[0];
 
     const match = await bcrypt.compare(password, user.password);
-
     if (!match) {
       return res.status(400).json({ message: "Wrong password ❌" });
     }
 
-    let status = "approved";
+    let status = "not_submitted";
 
     if (user.role === "owner") {
-      const [rows] = await db.promise().query(
-        "SELECT status FROM gym_owner_requests WHERE email = ?",
-        [user.email]
-      );
 
-     if (rows.length > 0) {
-  status = rows[0].status;
-} else {
-  status = "not_submitted";   // ✅ FIXED
-}
+      const { data } = await supabase
+        .from("gym_owner_requests")
+        .select("status")
+        .eq("email", email);
+
+      if (data && data.length > 0) {
+        status = data[0].status;
+      }
+
     }
 
-res.json({
-  user: {
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    status: status,     // ✅ FIXED
-    phone: user.phone
-  }
-});
+    res.json({
+      user: {
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        status
+      }
+    });
 
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ message: "Server error ❌" });
   }
 
 });
-
-
 
 
 
@@ -156,69 +147,21 @@ res.json({
 
 app.post("/gym-owner-request", async (req, res) => {
 
-  const {
-    full_name,
-    phone,
-    email,
-    business_license,
-    gym_type,
-    year_established,
-    website,
-    address,
-    city,
-    state,
-    zip,
-    total_area,
-    capacity,
-    monthly_fee,
-    yearly_fee,
-    amenities,
-    gym_description
-  } = req.body;
-
   try {
 
-    const query = `
-INSERT INTO gym_owner_requests
-(full_name, email, phone, business_license, gym_type, year_established,
-website, address, city, state, zip,
-total_area, capacity, monthly_fee, yearly_fee,
-amenities, gym_description, status)
-VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-`;
+    const { error } = await supabase
+      .from("gym_owner_requests")
+      .insert([{ ...req.body, status: "pending" }]);
 
-
-   await db.promise().query(query, [
-  full_name,
-  email,
-  phone,
-  business_license,
-  gym_type,
-  year_established,
-  website,
-  address,
-  city,
-  state,
-  zip,
-  total_area,
-  capacity,
-  monthly_fee,
-  yearly_fee,
-  amenities,
-  gym_description,
-  "pending"
-]);
-
+    if (error) throw error;
 
     res.json({ message: "Request Submitted ✅" });
 
-  } catch (error) {
-    console.log("GYM OWNER INSERT ERROR:", error);
+  } catch {
     res.status(500).json({ message: "Request Failed ❌" });
   }
 
 });
-
 
 /* ================= ADMIN APPROVAL ================= */
 
@@ -228,64 +171,101 @@ app.put("/approve-gym/:email", async (req, res) => {
 
   try {
 
-    await db.promise().query(
-      "UPDATE gym_owner_requests SET status='approved' WHERE email=?",
-      [email]
-    );
+    const { error: e1 } = await supabase
+      .from("gym_owner_requests")
+      .update({ status: "approved" })
+      .eq("email", email);
 
-    await db.promise().query(
-      "UPDATE users SET role='owner' WHERE email=?",
-      [email]
-    );
+    const { error: e2 } = await supabase
+      .from("users")
+      .update({ role: "owner" })
+      .eq("email", email);
+
+    if (e1 || e2) throw new Error();
 
     res.json({ message: "Gym Owner Approved ✅" });
 
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Approval failed ❌" });
   }
 
 });
 
 
+
+
 /* ================= GET PENDING REQUESTS ================= */
 
-app.get("/pending-requests", (req, res) => {
-
-  const query = `
-    SELECT * FROM gym_owner_requests
-    WHERE status = 'pending'
-  `;
-
-  db.query(query, (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.json(result);
-  });
-
-});
-app.get("/test-route", (req, res) => {
-  res.send("Test route working");
-});
-
-
-app.post("/api/contact", async (req, res) => {
-
-  const { name, email, message, role } = req.body;
+app.get("/pending-requests", async (req, res) => {
 
   try {
 
-    await db.promise().query(
-      "INSERT INTO contact_messages (full_name, email, message, role) VALUES (?, ?, ?, ?)",
-      [name, email, message, role]
-    );
+    const { data, error } = await supabase
+      .from("gym_owner_requests")
+      .select("*")
+      .eq("status", "pending");
 
-    res.json({ message: "Contact saved ✅" });
+    if (error) throw error;
 
-  } catch (error) {
-    console.log("CONTACT ERROR:", error);
+    res.json(data);
+
+  } catch {
+    res.status(500).json({ message: "Fetch failed ❌" });
+  }
+
+});
+
+/* ================= REJECT GYM ================= */
+
+app.put("/reject-gym/:email", async (req, res) => {
+
+  const email = req.params.email;
+
+  try {
+
+    const { error: e1 } = await supabase
+      .from("gym_owner_requests")
+      .update({ status: "rejected" })
+      .eq("email", email);
+
+    if (e1) throw new Error();
+
+    res.json({ message: "Gym Owner Rejected ❌" });
+
+  } catch {
+    res.status(500).json({ message: "Reject failed ❌" });
+  }
+
+});
+
+
+
+/* ================= CONTACT FORM ================= */
+
+app.post("/contact", async (req, res) => {
+
+  const { full_name, email, message } = req.body;
+
+  try {
+
+    const { error } = await supabase
+      .from("contact_messages")
+      .insert([
+        { full_name, email, message }
+      ]);
+
+    if (error) throw error;
+
+    res.json({ message: "Message sent ✅" });
+
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Failed ❌" });
   }
 
 });
+
+
 app.listen(5000, () => {
   console.log("🚀 Server running on port 5000");
 });
