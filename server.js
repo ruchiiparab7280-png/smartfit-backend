@@ -31,7 +31,7 @@ const userDashboardRoute = require("./routes/userDashboard");
 app.use("/api/user", userDashboardRoute);
 
 
-const paymentRoutes = require("./routes/payment");
+const paymentRoutes = require("./routes/paymentRoutes");
 app.use("/payment", paymentRoutes);
 
 /* ================= TEST ================= */
