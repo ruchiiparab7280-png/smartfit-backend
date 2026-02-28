@@ -14,9 +14,13 @@ const supabase = createClient(
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:4028",
+  origin: [
+    "http://localhost:4028",
+    "https://smartfit-frontend-taupe.vercel.app"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type"]
+  allowedHeaders: ["Content-Type"],
+  credentials: true
 }));
 app.use(express.json());
 
