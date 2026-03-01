@@ -14,12 +14,7 @@ router.post("/create-order", async (req, res) => {
       return res.status(500).json({ message: "Razorpay keys missing" });
     }
 
-    const Razorpay = require("razorpay");
-
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
-    });
+    
 
     const options = {
       amount: req.body.amount * 100,
@@ -29,7 +24,12 @@ router.post("/create-order", async (req, res) => {
 
     const order = await razorpay.orders.create(options);
 
-    res.json(order);
+    res.json({
+  id: order.id,
+  amount: order.amount,
+  currency: order.currency,
+  key: process.env.RAZORPAY_KEY_ID
+});
 
   } catch (err) {
     console.error("ORDER ERROR:", err);
