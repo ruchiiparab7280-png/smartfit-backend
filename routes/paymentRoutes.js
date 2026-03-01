@@ -4,8 +4,8 @@ const Razorpay = require("razorpay");
 
 // ✅ Create only ONE instance
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id:"rzp_test_SLuWOZ9GWH4GTe",
+  key_secret:"zat6iKQzzugnC0ZS0Bin2S2j",
 });
 
 router.post("/create-order", async (req, res) => {
