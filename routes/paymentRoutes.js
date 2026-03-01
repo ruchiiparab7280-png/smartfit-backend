@@ -8,6 +8,12 @@ const razorpay = new Razorpay({
   key_secret:"zat6iKQzzugnC0ZS0Bin2S2j",
 });
 
+
+router.get("/razorpay-key", (req, res) => {
+  res.json({
+    key: process.env.RAZORPAY_KEY_ID
+  });
+});
 router.post("/create-order", async (req, res) => {
   try {
 
