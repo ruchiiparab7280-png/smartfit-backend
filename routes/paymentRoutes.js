@@ -14,7 +14,7 @@ router.get("/razorpay-key", (req, res) => {
     key:"rzp_test_SLuWOZ9GWH4GTe"
   });
 });
-
+console.log("Creating order for:", amount);
 router.post("/create-order", async (req, res) => {
   try {
 
@@ -28,6 +28,7 @@ router.post("/create-order", async (req, res) => {
       amount: amount * 100,
       currency: "INR",
       receipt: "receipt_" + Date.now(),
+      payment_capture: 1   // ⭐ ADD THIS
     };
 
     const order = await razorpay.orders.create(options);
