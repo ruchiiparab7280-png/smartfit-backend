@@ -35,7 +35,10 @@ const userDashboardRoute = require("./routes/userDashboard");
 app.use("/api/user", userDashboardRoute);
 
 
-const paymentRoutes = require("./routes/paymentRoutes");
+const paymentRoutes = require("./routes/paymentRoutes.js");
+
+console.log("🔥 Payment routes loaded");
+
 app.use("/payment", paymentRoutes);
 
 /* ================= TEST ================= */
