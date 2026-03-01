@@ -1,8 +1,12 @@
 console.log("🔥 FINAL SERVER RUNNING");
-
+require("dotenv").config();
 const express = require("express");
 
 const cors = require("cors");
+console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID);
+console.log("KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET);
+
+
 
 const bcrypt = require("bcrypt");const { createClient } = require("@supabase/supabase-js");
 
@@ -273,6 +277,9 @@ app.post("/contact", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+app.use("/payment", require("./routes/paymentRoutes"));
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
 });
