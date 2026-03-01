@@ -19,6 +19,7 @@ router.post("/create-order", async (req, res) => {
 
     console.log("KEY ID:", process.env.RAZORPAY_KEY_ID ? "Present" : "Missing");
     console.log("KEY SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Present" : "Missing");
+    console.log("🔥 Razorpay route loaded");
 
     const options = {
       amount: amount * 100,
