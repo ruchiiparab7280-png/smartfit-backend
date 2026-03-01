@@ -11,7 +11,7 @@ const razorpay = new Razorpay({
 
 router.get("/razorpay-key", (req, res) => {
   res.json({
-    key: process.env.RAZORPAY_KEY_ID
+    key:"rzp_test_SLuWOZ9GWH4GTe"
   });
 });
 router.post("/create-order", async (req, res) => {
