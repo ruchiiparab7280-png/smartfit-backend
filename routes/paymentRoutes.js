@@ -4,25 +4,30 @@ const Razorpay = require("razorpay");
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
 router.post("/create-order", async (req, res) => {
   try {
+    const { amount } = req.body;
 
     const options = {
-      amount: 4999 * 100,
+      amount: amount * 100, // convert to paisa
       currency: "INR",
-      receipt: "order_rcptid_11"
+      receipt: "receipt_" + Date.now()
     };
 
     const order = await razorpay.orders.create(options);
 
-    res.json(order);
+    return res.json(order);   // ✅ IMPORTANT
+  } catch (error) {
+    console.error("Razorpay Error:", error);
 
-  } catch (err) {
-    console.log(err);
-    res.status(500).send("Error creating order");
+    return res.status(500).json({
+      success: false,
+      message: "Error creating order",
+      error: error.message
+    });   // ✅ send JSON not string
   }
 });
 
