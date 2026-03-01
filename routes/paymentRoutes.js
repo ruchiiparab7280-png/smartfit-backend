@@ -14,13 +14,16 @@ router.get("/razorpay-key", (req, res) => {
     key:"rzp_test_SLuWOZ9GWH4GTe"
   });
 });
+
 router.post("/create-order", async (req, res) => {
   try {
 
-    console.log("KEY ID:", process.env.RAZORPAY_KEY_ID ? "Present" : "Missing");
-    console.log("KEY SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Present" : "Missing");
-    console.log("🔥 Razorpay route loaded");
-    const { amount } = req.body;   // 👈 ADD THIS
+    const amount = parseInt(req.body.amount);
+
+    if (!amount) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+
     const options = {
       amount: amount * 100,
       currency: "INR",
@@ -31,7 +34,7 @@ router.post("/create-order", async (req, res) => {
 
     res.json({
       ...order,
-      key: process.env.RAZORPAY_KEY_ID,   // 🔥 send key to frontend
+      key: "rzp_test_SLuWOZ9GWH4GTe"
     });
 
   } catch (err) {
