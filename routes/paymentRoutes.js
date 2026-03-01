@@ -15,7 +15,7 @@ router.post("/create-order", async (req, res) => {
     console.log("KEY SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Present" : "Missing");
 
     const options = {
-      amount: req.body.amount * 100,
+      amount: amount * 100,
       currency: "INR",
       receipt: "receipt_" + Date.now(),
     };
