@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Razorpay = require("razorpay");
+const crypto = require("crypto");
 
 // ✅ Create only ONE instance
 const razorpay = new Razorpay({
@@ -46,7 +47,7 @@ router.post("/create-order", async (req, res) => {
 
 router.post("/verify", (req, res) => {
 
-  const crypto = require("crypto");
+ 
 
   const {
     razorpay_order_id,
