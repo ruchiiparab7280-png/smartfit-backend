@@ -44,4 +44,28 @@ router.post("/create-order", async (req, res) => {
   }
 });
 
+router.post("/verify", (req, res) => {
+
+  const crypto = require("crypto");
+
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+  } = req.body;
+
+  const sign = razorpay_order_id + "|" + razorpay_payment_id;
+
+  const expectedSign = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(sign.toString())
+    .digest("hex");
+
+  if (razorpay_signature === expectedSign) {
+    return res.json({ success: true });
+  } else {
+    return res.json({ success: false });
+  }
+
+});
 module.exports = router;
