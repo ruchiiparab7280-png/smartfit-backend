@@ -19,7 +19,10 @@ router.get("/razorpay-key", (req, res) => {
 // Create Order
 router.post("/create-order", async (req, res) => {
   try {
+
     const amount = parseInt(req.body.amount);
+
+    console.log("Creating order for:", amount); // ✅ yaha rakho
 
     if (!amount) {
       return res.status(400).json({ error: "Invalid amount" });
@@ -29,16 +32,14 @@ router.post("/create-order", async (req, res) => {
       amount: amount * 100,
       currency: "INR",
       receipt: "receipt_" + Date.now(),
-      payment_capture: 1,
+      payment_capture: 1
     };
 
     const order = await razorpay.orders.create(options);
 
     res.json({
-      id: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      key: "rzp_test_SLuWOZ9GWH4GTe",
+      ...order,
+      key: "rzp_test_SLuWOZ9GWH4GTe"
     });
 
   } catch (err) {
